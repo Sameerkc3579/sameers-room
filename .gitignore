@@ -1,0 +1,28 @@
+node_modules/
+dist/
+# downloaded by blender/fetch_assets.py; only the compressed room.glb ships
+blender/assets/
+blender/room_raw.glb
+blender/*.blend
+blender/*.blend1
+# generated from os/ by `npm run os`
+scene/public/os/
+
+# deploy folder made by `npm run bundle` in scene/
+scene/deploy/
+
+# secrets: Upstash keys and the guestbook admin key live in Vercel and a local .env, never in git
+.env
+.env.*
+.vercel/
+
+# Python caches
+__pycache__/
+
+# leftovers and reference material that aren't part of the build
+blender/gen/
+blender/legacy/
+/*.mp4
+/edges.png
+/index.html
+/Sameer_Choudhary_Resume.pdf
