@@ -1,0 +1,40 @@
+{
+  "name": "scene",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run os && npm run stats && tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "os": "npm --prefix ../os run build && node scripts/copy-os.mjs",
+    "room": "node scripts/room.mjs",
+    "stats": "node scripts/stats.mjs",
+    "bundle": "node scripts/bundle.mjs"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
+    "@react-three/postprocessing": "^3.2.2",
+    "maath": "^0.10.8",
+    "n8ao": "^2.0.1",
+    "pdfjs-dist": "^6.5.438",
+    "postprocessing": "^6.39.5",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "three": "^0.186.1",
+    "zustand": "^5.0.16"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "^4.5.1",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.186.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "oxlint": "^1.89.0",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.5"
+  }
+}
