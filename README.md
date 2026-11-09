@@ -42,8 +42,8 @@ cd ../scene && npm install
 npm run dev        # the room at http://localhost:5173
 ```
 
-`npm run build` builds SameerOS into the scene and then the scene itself; `npm run bundle` makes the `deploy/`
-folder that goes to Vercel. The guestbook, hunt and fireflies need `UPSTASH_REDIS_REST_URL` and
+`npm run build` builds SameerOS into the scene and then the scene itself. Vercel deploys every push to `main`
+(root directory `scene/`, settings in `scene/vercel.json`). The guestbook, hunt and fireflies need `UPSTASH_REDIS_REST_URL` and
 `UPSTASH_REDIS_REST_TOKEN` (set in Vercel, never committed); without them the rest of the room still works.
 
 ## Credits

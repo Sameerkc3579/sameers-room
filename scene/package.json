@@ -10,8 +10,7 @@
     "preview": "vite preview",
     "os": "npm --prefix ../os run build && node scripts/copy-os.mjs",
     "room": "node scripts/room.mjs",
-    "stats": "node scripts/stats.mjs",
-    "bundle": "node scripts/bundle.mjs"
+    "stats": "node scripts/stats.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

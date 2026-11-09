@@ -8,7 +8,7 @@ blender/*.blend1
 # generated from os/ by `npm run os`
 scene/public/os/
 
-# deploy folder made by `npm run bundle` in scene/
+# the old hand-deploy folder (Vercel now builds from the repo)
 scene/deploy/
 
 # secrets: Upstash keys and the guestbook admin key live in Vercel and a local .env, never in git
