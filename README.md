@@ -19,6 +19,8 @@ stats, and the room follows the time and weather in Raipur.
 - **Guestbook**: every note grows a new leaf on the vine along the top shelf.
 - **Fireflies**: other visitors, live, drifting near whatever they're looking at.
 - **Lights off**: the blinds close and your cursor becomes a torch.
+- **Room sounds**, all generated in code: rain on the window when it's raining in Raipur, birds by day, crickets at
+  night, the candles, the lamp, the blinds, pages and keys. The speaker in the dock turns them off.
 - **Break my agent**: a 6-level prompt-injection game in SameerOS.
 - **Injection detector**: a real prompt-injection classifier
   ([yzdvai/tiny-injection-guard](https://huggingface.co/yzdvai/tiny-injection-guard)) running on your device with

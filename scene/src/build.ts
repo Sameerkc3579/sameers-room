@@ -5,6 +5,7 @@
 import { create } from 'zustand'
 import { useScene } from './store'
 import { endTour } from './tour'
+import { whoosh } from './sound'
 
 export const REPO = 'https://github.com/Sameerkc3579/sameers-room'
 
@@ -42,8 +43,9 @@ export const COMMITS: Commit[] = [
   { hash: 'a4d983a', day: NOV(9), title: 'One bottom dock, labels kept on screen, faster transitions' },
   { hash: '7163748', day: NOV(9), title: 'README' },
   { hash: '03cf519', day: NOV(9), title: 'Deploy from GitHub: Vercel builds the room from the repo' },
-  // this very replay: its own hash can't be written inside it
-  { hash: 'HEAD', day: NOV(10), title: 'Watch the room build itself' },
+  { hash: 'e9af740', day: NOV(10), title: 'Watch the room build itself' },
+  // the newest commit: its own hash can't be written inside it
+  { hash: 'HEAD', day: NOV(10), title: 'Room sounds' },
 ]
 
 /** what appears (or happens) on a beat; the first five are the Blender room going up, piece by piece */
@@ -104,7 +106,8 @@ export const BEATS: Beat[] = [
   { commits: [20, 21], line: ['Swipe to look around, and every animation kept', 'घूमने के लिए स्वाइप करें, और हर एनिमेशन वैसा ही'], ms: 2300 },
   { commits: [22, 23], ms: 2000 },
   { commits: [24], line: ['Every push now deploys itself', 'अब हर push अपने आप लाइव होता है'], ms: 1700 },
-  { commits: [25], line: ["You're watching it", 'आप इसे अभी देख रहे हैं'], ms: 1800 },
+  { commits: [25], line: ["You're watching it", 'आप इसे अभी देख रहे हैं'], ms: 1700 },
+  { commits: [26], line: ['Rain, birds, crickets and candles, all made in code', 'बारिश, चिड़ियाँ, झींगुर और मोमबत्तियाँ, सब कोड से बनी'], ms: 1900 },
 ]
 
 /** the room comes apart first (decor first, walls last) */
@@ -142,6 +145,7 @@ export function startBuild() {
   if (!s.lightsOn) s.toggleLights()
   s.setHover(null)
   clock.ms = 0
+  whoosh()
   useBuild.setState({ at: -1, paused: false })
 }
 

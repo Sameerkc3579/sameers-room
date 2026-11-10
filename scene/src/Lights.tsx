@@ -8,6 +8,7 @@ import { useRoom } from './roomModel'
 import { useOutside, type Sky } from './raipur'
 import { lite } from './device'
 import { reached, useBuild } from './build'
+import { thunder } from './sound'
 
 RectAreaLightUniformsLib.init()
 const WHITE = new THREE.Color('#ffffff')
@@ -117,7 +118,7 @@ function useOutsideLight(): OutsideLight {
 }
 
 /** Thunderstorms: every few seconds the window flashes white for a moment (a double flicker, like real lightning). */
-function useLightning(apply: (flash: number) => void) {
+function useLightning(apply: (flash: number) => void, onStrike?: () => void) {
   const storm = useOutside((s) => s.sky === 'storm')
   const next = useRef(3)
   const strike = useRef(-10)
@@ -127,6 +128,7 @@ function useLightning(apply: (flash: number) => void) {
     if (t > next.current) {
       strike.current = t
       next.current = t + 5 + Math.random() * 10
+      onStrike?.()
     }
     const dt = t - strike.current
     const flash = dt < 0 || dt > 0.6 ? 0 : Math.max(0, Math.exp(-dt * 14) + (dt > 0.18 ? 0.7 * Math.exp(-(dt - 0.18) * 10) : 0))
@@ -148,7 +150,7 @@ export function Lights() {
   const windowLight = useRef<THREE.Light | null>(null)
   useLightning((flash) => {
     if (windowLight.current) windowLight.current.intensity = (out.winI + flash * 14) * (lite ? WIN_SPOT : 1)
-  })
+  }, thunder)
 
   // Nothing in the room moves, so shadows are drawn a few times after load and then left alone.
   useLayoutEffect(() => {

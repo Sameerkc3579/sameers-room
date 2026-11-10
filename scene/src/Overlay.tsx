@@ -9,6 +9,7 @@ import { usePresence } from './presence'
 import { toggleLang, useLang, useT } from './i18n'
 import { useChat } from './agent'
 import { reached, startBuild, useBuild } from './build'
+import { toggleSound, useSound } from './sound'
 
 const RESUME = './os/resume.pdf'
 const OS_2D = './os/index.html'
@@ -127,6 +128,7 @@ export function Overlay() {
   const replay = useBuild((s) => s.at !== null) // so does the "how it was built" replay (BuildCard.tsx)
   const setView = useScene((s) => s.setView)
   const lang = useLang((s) => s.lang)
+  const sound = useSound((s) => s.on)
   const t = useT()
   const chat = useChat()
   // the dock's "click the dots" line shows for a while once the room is drawn, then goes
@@ -167,7 +169,8 @@ export function Overlay() {
         <button className="dock-tour" onClick={startTour}>
           <span>
             <span className="tour-full">{t('Hiring? ', 'भर्ती कर रहे हैं? ')}</span>
-            {t('60-sec tour', '60 सेकंड का टूर')}
+            <span className="tour-long">{t('60-sec tour', '60 सेकंड का टूर')}</span>
+            <span className="tour-short">{t('Tour', 'टूर')}</span>
           </span>
         </button>
         <button className="dock-build" onClick={startBuild} title={t('Watch the room build itself, commit by commit', 'कमरे को कमिट-दर-कमिट बनते हुए देखें')}>
@@ -187,6 +190,25 @@ export function Overlay() {
             2D<span className="dock-long">{t(' version', ' वर्ज़न')}</span>
           </span>
         </a>
+        <button
+          className={`dock-sound${sound ? '' : ' off'}`}
+          onClick={toggleSound}
+          aria-pressed={sound}
+          aria-label={t('Room sounds', 'कमरे की आवाज़ें')}
+          title={sound ? t('Turn the sound off', 'आवाज़ बंद करें') : t('Turn the sound on', 'आवाज़ चालू करें')}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden>
+            <path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z" />
+            {sound ? (
+              <>
+                <path d="M15.5 9.5a3.5 3.5 0 0 1 0 5" />
+                <path d="M18 7a7 7 0 0 1 0 10" />
+              </>
+            ) : (
+              <path d="M16 10l4 4M20 10l-4 4" />
+            )}
+          </svg>
+        </button>
         <button className="dock-lang" onClick={toggleLang} lang={lang === 'en' ? 'hi' : 'en'} title={t('हिंदी में देखें', 'View in English')}>
           <span className="lang-full">{lang === 'en' ? 'हिंदी' : 'English'}</span>
           <span className="lang-short" aria-hidden>

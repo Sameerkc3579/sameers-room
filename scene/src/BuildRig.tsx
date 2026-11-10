@@ -9,6 +9,7 @@ import { BEATS, PIECE_AT, START, TEARDOWN, TOTAL, END, clock, useBuild, type Pie
 import { useRoom } from './roomModel'
 import { keyOf } from './interactables'
 import { lite } from './device'
+import { land } from './sound'
 
 type Arrive = 'grow' | 'rise' | 'drop' | 'pop'
 
@@ -154,6 +155,7 @@ function advance(rig: Rig, ms: number) {
     const k = progress(p, ms)
     if (k === p.k) continue
     if (k >= 1 || k <= 0) landed = true
+    if (k >= 1 && ms >= TEARDOWN) land(p.arrive)
     p.k = k
     place(p, k)
     moved = true

@@ -2,6 +2,7 @@
 // (os/src/content), so the room and the OS never disagree.
 import { useState } from 'react'
 import { Book, Cover } from './Book'
+import { page as turnPage } from './sound'
 import { singlePage, useScene } from './store'
 import { profile, GITHUB, LINKEDIN, EMAIL } from '../../os/src/content/profile'
 import { projects, alsoBuilt, type Project } from '../../os/src/content/projects'
@@ -104,6 +105,7 @@ export function ProjectsBook() {
   const [turns, setTurns] = useState(0)
   const pick = (p: Project) => {
     if (p.id === sel?.id) return
+    turnPage()
     setSel(p)
     setTurns((t) => t + 1)
   }

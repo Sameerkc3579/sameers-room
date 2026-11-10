@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { singlePage, useScene } from './store'
 import { useT } from './i18n'
+import { page as paper, shut } from './sound'
 
 /**
  * start   closed and tiny, sitting on the object on the desk
@@ -36,6 +37,7 @@ export function Book({ label, tint = 'sage', cover, inside, page, overlay }: Boo
   const later = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(fn, ms))
   const close = () => {
     timers.current.forEach(clearTimeout)
+    shut()
     setPhase('shut')
     later(350, () => setPhase('sink'))
     later(600, () => setView('room'))
@@ -48,7 +50,12 @@ export function Book({ label, tint = 'sage', cover, inside, page, overlay }: Boo
   useEffect(() => {
     const t = timers.current
     const raf = requestAnimationFrame(() => requestAnimationFrame(() => setPhase('rise')))
-    t.push(window.setTimeout(() => setPhase('open'), 380))
+    t.push(
+      window.setTimeout(() => {
+        setPhase('open')
+        paper()
+      }, 380),
+    )
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current()
     window.addEventListener('keydown', onKey)
     return () => {
