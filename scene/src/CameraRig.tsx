@@ -6,6 +6,7 @@ import { BOOKS, useScene } from './store'
 import { useRoom, type ScreenRect } from './roomModel'
 import { FOCUS } from './focus'
 import { STOPS } from './tour'
+import { BEATS, clock, useBuild, type Look } from './build'
 import { pan, useSwipeHint } from './pan'
 import { lite } from './device'
 
@@ -57,6 +58,45 @@ function tourShot(anchor: THREE.Vector3, dist: number, lift: number, room: Shot,
   const d = dist * (aspect < 1 ? 1.6 : 1)
   const pos = anchor.clone().add(room.pos.clone().sub(anchor).normalize().multiplyScalar(d))
   return { pos, look: anchor.clone().add(new THREE.Vector3(0, -d * lift, 0)), fov: 45 }
+}
+
+// the "how it was built" replay (build.ts): further back and higher than the room view, to watch the whole nook go
+// up, slowly circling; portrait screens stand back far enough to see it end to end
+const BUILD_WIDE = { pos: new THREE.Vector3(0.8, 1.78, 2.75), look: new THREE.Vector3(-0.25, 1.08, -0.6), fov: 54 }
+const BUILD_TALL = { pos: new THREE.Vector3(0.25, 1.85, 3.0), look: new THREE.Vector3(-0.25, 1.25, -0.7), fov: 76 }
+/** what each beat looks at, from how far, and (if not from where the camera stands) from which side */
+const BUILD_AT: Partial<Record<Look, { at: THREE.Vector3 | string; dist: number; from?: THREE.Vector3 }>> = {
+  screen: { at: 'screen', dist: 1.5 },
+  computer: { at: 'screen', dist: 0.8 },
+  note: { at: 'screen', dist: 1.15 },
+  books: { at: 'books', dist: 1.35 },
+  stats: { at: new THREE.Vector3(...FOCUS.stats.target!), dist: 1.35 },
+  guestbook: { at: 'guestbook', dist: 1.35 },
+  // the window is in the side wall: look at it from across the room, not along the wall
+  window: { at: new THREE.Vector3(-1.5, 1.55, -0.1), dist: 2.1, from: new THREE.Vector3(0.35, 1.6, 1.35) },
+  shelf: { at: new THREE.Vector3(-0.05, 2.03, -0.55), dist: 1.55 },
+}
+
+/** (the replay's card covers the bottom of the page: aim a little low so what's arriving sits above it, more so on
+ * a short screen, where the card takes a bigger share) */
+function buildShot(look: Look, s: ScreenRect, anchors: Record<string, THREE.Vector3>, aspect: number, short: boolean): Shot {
+  const tall = aspect < 1
+  const lift = short ? 0.2 : 0.08
+  const base = tall ? BUILD_TALL : BUILD_WIDE
+  const spot = BUILD_AT[look]
+  const at = spot && (spot.at instanceof THREE.Vector3 ? spot.at : spot.at === 'screen' ? s.center : anchors[spot.at])
+  if (!spot || !at) {
+    const t = clock.ms / 1000
+    return {
+      pos: base.pos.clone().add(new THREE.Vector3(Math.sin(t * 0.3) * (tall ? 0.2 : 0.35), Math.sin(t * 0.21) * 0.05, 0)),
+      look: base.look.clone().add(new THREE.Vector3(0, short ? -0.3 : 0, 0)),
+      fov: base.fov,
+    }
+  }
+  const d = spot.dist * (tall ? 1.6 : 1)
+  const from = spot.from ?? base.pos
+  const pos = at.clone().add(from.clone().sub(at).normalize().multiplyScalar(d))
+  return { pos, look: at.clone().add(new THREE.Vector3(0, -d * lift, 0)), fov: tall ? 60 : 46 }
 }
 
 export function CameraRig() {
@@ -173,9 +213,13 @@ export function CameraRig() {
           }
         : ROOM_WIDE
     const stop = tour !== null ? STOPS[tour] : null
+    const replay = useBuild.getState().at
+    const building = view === 'room' && replay !== null
+    const beatLook = replay !== null && replay >= 0 && replay < BEATS.length ? (BEATS[replay].look ?? 'wide') : 'wide'
     const target = focus === 'monitor' ? screen.center : focus && FOCUS[focus]?.target ? new THREE.Vector3(...FOCUS[focus].target!) : focus && anchors[focus]
-    const shot =
-      view === 'screen'
+    const shot = building
+      ? buildShot(beatLook, screen, anchors, aspect, size.height < 500)
+      : view === 'screen'
         ? screenShot(screen, aspect)
         : view === 'focus' && focus && stop?.dist && target
           ? tourShot(target, stop.dist, stop.lift ?? 0.17, room, aspect)
@@ -236,7 +280,7 @@ export function CameraRig() {
 
     const pos = shot.pos.clone()
     const tgt = shot.look.clone()
-    if (view === 'room') {
+    if (view === 'room' && !building) {
       // parallax: the camera follows the pointer a little, so near things slide past far things
       const t = state.clock.elapsedTime
       // (touch screens: the "pointer" is wherever the finger last was, so there only the sway plays)
@@ -255,7 +299,8 @@ export function CameraRig() {
     }
 
     // phones follow a swipe closely; a mouse gets the slower, floatier parallax
-    const smooth = view === 'room' ? (pan.dragging ? 0.03 : lite ? 0.1 : 0.3) : 0.2
+    // (the replay's camera moves slower, like a camera on a slider)
+    const smooth = building ? 0.4 : view === 'room' ? (pan.dragging ? 0.03 : lite ? 0.1 : 0.3) : 0.2
     easing.damp3(camera.position, pos, smooth, dt)
     easing.damp3(look.current, tgt, smooth, dt)
     easing.damp(camera, 'fov', shot.fov, smooth, dt)

@@ -14,6 +14,7 @@ import { useRoom } from './roomModel'
 import { INTERACTABLES } from './interactables'
 import { useLang } from './i18n'
 import { lite } from './device'
+import { reached, useBuild } from './build'
 
 const coarse = window.matchMedia('(pointer: coarse)').matches
 const WINDOW = new THREE.Vector3(-1.38, 1.62, -0.1) // just inside the window on the left wall (Lights.tsx: WIN)
@@ -212,13 +213,14 @@ export function Fireflies() {
   }
   const [pointed, setHovered] = useState<string | null>(null)
   const hovered = inRoom ? pointed : null // leaving the room (a book, the computer) drops the hover
+  const here = useBuild((s) => reached(s, 'fireflies')) // the replay (build.ts) brings them with their commit
 
   useLayoutEffect(() => {
     document.body.style.cursor = hovered ? 'pointer' : useScene.getState().hover ? 'pointer' : ''
   }, [hovered])
 
   return (
-    <group name="Fireflies">
+    <group name="Fireflies" visible={here}>
       {list.map((v) => (
         <Firefly
           key={v.id}

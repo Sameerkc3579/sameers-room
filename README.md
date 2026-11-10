@@ -13,6 +13,8 @@ stats, and the room follows the time and weather in Raipur.
 - **Ask Sameer**: a chat bot (rule-based, runs in your browser, no API key) that answers questions about my work
   and moves things in the room: "show me your resume", "turn the lights off".
 - **Hiring? 60-sec tour**: a guided camera tour for recruiters.
+- **How it was built**: the room takes itself apart, then builds itself again in the order it was really built, one
+  commit of this repo at a time.
 - **Live stats** from LeetCode, Codeforces and GitHub on the pegboard.
 - **Guestbook**: every note grows a new leaf on the vine along the top shelf.
 - **Fireflies**: other visitors, live, drifting near whatever they're looking at.

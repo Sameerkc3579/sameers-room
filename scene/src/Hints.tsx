@@ -6,6 +6,7 @@ import { useScene } from './store'
 import { useRoom } from './roomModel'
 import { ANCHORS, INTERACTABLES } from './interactables'
 import { useT } from './i18n'
+import { END, PIECE_AT, useBuild } from './build'
 
 const coarse = window.matchMedia('(pointer: coarse)').matches
 const INTRO_MS = 7000
@@ -82,7 +83,10 @@ let tappedAt = 0
 
 export function Hints() {
   const keys = useHintKeys((s) => s.keys)
-  const inRoom = useScene((s) => s.view === 'room' && s.tour === null)
+  // the replay (build.ts) shows the dots for their own commit and once the room is whole again; in its close-ups
+  // they'd only crowd the edges of the screen
+  const dotsBuilt = useBuild((s) => s.at === null || s.at === PIECE_AT.hints || s.at === END)
+  const inRoom = useScene((s) => s.view === 'room' && s.tour === null) && dotsBuilt
   const hover = useScene((s) => s.hover)
   const playing = useScene((s) => s.music.playing)
   const lightsOn = useScene((s) => s.lightsOn)

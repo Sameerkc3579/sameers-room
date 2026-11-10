@@ -5,6 +5,7 @@ import { useScene } from './store'
 import { useRoom } from './roomModel'
 import { clockTexture, drawClock } from './clockTexture'
 import { lite } from './device'
+import { reached, useBuild } from './build'
 
 /** stable pseudo-random number in [0, 1) for index i (keeps render pure) */
 const hash = (i: number) => {
@@ -24,10 +25,11 @@ function Candles() {
   const seeds = useMemo(() => candles.map((_, i) => hash(i) * 100), [candles])
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
+    const lit = reached(useBuild.getState(), 'fixtures') ? 1 : 0 // (the replay lights them with the rest)
     lights.current.forEach((l, i) => {
       if (!l) return
       const s = seeds[i]
-      l.intensity = (0.32 + Math.sin(t * 9.3 + s) * 0.04 + Math.sin(t * 23.1 + s * 2) * 0.03 + Math.sin(t * 3.7 + s) * 0.03) * GLOW
+      l.intensity = lit * (0.32 + Math.sin(t * 9.3 + s) * 0.04 + Math.sin(t * 23.1 + s * 2) * 0.03 + Math.sin(t * 3.7 + s) * 0.03) * GLOW
     })
   })
   return (
@@ -52,6 +54,7 @@ function Candles() {
 /** Soft mist rising from the humidifier: a few dozen big, faint sprites drifting up and fading. */
 function Mist() {
   const { mist } = useRoom()
+  const there = useBuild((s) => reached(s, 'setup')) // the replay (build.ts): no mist before the diffuser
   const N = 40
   const pts = useRef<THREE.Points>(null)
   const sprite = useMemo(() => {
@@ -86,7 +89,7 @@ function Mist() {
     pos.needsUpdate = true
   })
   return (
-    <points ref={pts} geometry={geo} frustumCulled={false}>
+    <points ref={pts} geometry={geo} frustumCulled={false} visible={there}>
       <pointsMaterial map={sprite} size={0.06} sizeAttenuation transparent opacity={0.1} depthWrite={false} color="#f4f6f2" />
     </points>
   )
@@ -95,7 +98,9 @@ function Mist() {
 /** Desk clock shows the time in Raipur; LED strips, lamp and neon dim with the light switch. */
 function Details() {
   const { scene, glow } = useRoom()
-  const on = useScene((s) => s.lightsOn)
+  const lightsOn = useScene((s) => s.lightsOn)
+  const lit = useBuild((s) => reached(s, 'fixtures')) // the replay (build.ts) lights them with the rest
+  const on = lightsOn && lit
 
   useLayoutEffect(() => {
     const face = scene.getObjectByName('DeskClock_Screen') as THREE.Mesh | undefined

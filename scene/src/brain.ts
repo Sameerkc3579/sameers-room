@@ -9,6 +9,7 @@ import { clockText, doing, skyText, useOutside } from './raipur'
 import { useScene } from './store'
 import { useHunt } from './hunt'
 import { DOING, someone, usePresence } from './presence'
+import { COMMITS } from './build'
 
 export interface Action {
   tool: string
@@ -526,11 +527,27 @@ const TOPICS: Topic[] = [
     },
   },
   {
+    id: 'build',
+    kind: 'do',
+    score: (q) => {
+      if (projectIn(q)) return 0 // (a project's own "how did you build X" is the project topic's question)
+      if (q.has('build itself', 'making of', 'behind the scenes', 'commit', 'commits', 'git history', 'git log', 'rebuild', 'timeline', 'kaise bana', 'kaise banaya'))
+        return 3
+      // "how was this room made?", "how did you build the site"
+      return q.has('how') && q.has('built', 'build', 'made', 'make', 'create*') && q.has('room', 'this', 'site', 'website', 'portfolio') ? 3 : 0
+    },
+    answer: () =>
+      say(
+        `Watch: the room comes apart, then builds itself again in the order I really built it, one commit at a time: ${COMMITS.length} commits from Nov 1 to Nov 10.`,
+        act('build'),
+      ),
+  },
+  {
     id: 'room',
     kind: 'say',
     score: (q) => (q.has('this room', 'the room', 'this website', 'this site', 'how did you make', 'how was this made', 'three js', 'threejs', '3d') ? 2.2 : 0),
     answer: () =>
-      say('This room is my portfolio: it’s built with React Three Fiber, modelled in Blender, and the monitor runs SameerOS, a small OS I wrote. Click the glowing dots, or ask me to show you something.'),
+      say('This room is my portfolio: it’s built with React Three Fiber, modelled in Blender, and the monitor runs SameerOS, a small OS I wrote. Ask me how it was built to watch it go up, commit by commit.'),
   },
   {
     id: 'plant',
@@ -717,7 +734,7 @@ export function reply(raw: string): Answer {
   // can ride along with anything ("open the terminal and play some music")
   const light = (t: Topic) => t.id === 'lights' || t.id === 'music'
   // the tour and the game take over the screen, so nothing rides along with them
-  const solo = best.t.id === 'tour' || best.t.id === 'breakagent' || best.t.id === 'guard'
+  const solo = best.t.id === 'tour' || best.t.id === 'build' || best.t.id === 'breakagent' || best.t.id === 'guard'
   const second = solo ? undefined : ranked.find((x) => x.t !== best.t && x.s >= 2 && (x.t.kind !== best.t.kind || light(x.t) || light(best.t)))
   const picked = second ? [best.t, second.t] : [best.t]
   if (second && best.t.kind === 'say') picked.reverse() // do things first, then talk

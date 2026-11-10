@@ -11,6 +11,7 @@ import { useScene } from './store'
 import { INTERACTABLES } from './interactables'
 import { lite } from './device'
 import { cheap } from './lite'
+import { reached, useBuild } from './build'
 
 const coarse = window.matchMedia('(pointer: coarse)').matches
 
@@ -127,6 +128,13 @@ export function Vine() {
   const status = useNotes((s) => s.status)
   const inRoom = useScene((s) => s.view === 'room')
   const touring = useScene((s) => s.tour !== null)
+  // the "how it was built" replay (build.ts): no vine until its commit, then it grows again from the pot
+  const grown = useBuild((s) => reached(s, 'vine'))
+  const replaying = useBuild((s) => s.at !== null)
+  const regrow = useRef(false)
+  useLayoutEffect(() => {
+    if (!grown) regrow.current = true
+  }, [grown])
   const curve = useMemo(() => makePath(), [])
   const length = useMemo(() => curve.getLength(), [curve])
   const leaves = useMemo(() => layout(notes, curve, length), [notes, curve, length])
@@ -184,6 +192,12 @@ export function Vine() {
     const t = clock.elapsedTime
     const room = useScene.getState().view === 'room'
     const last = shown.current
+    if (regrow.current && reached(useBuild.getState(), 'vine')) {
+      regrow.current = false
+      const step = Math.min(0.08, 1.6 / Math.max(1, leaves.length))
+      leaves.forEach((l, i) => born.current.set(l.key, t + 0.1 + i * step))
+      last.grown.fill(-1)
+    }
     const relaid = last.leaves !== leaves
     let waiting = 0
     let changed = relaid
@@ -246,9 +260,9 @@ export function Vine() {
   }
 
   const tip = useOnScreen()
-  const leaf = hovered !== null ? leaves[hovered] : inRoom && !touring ? leaves.find((l) => l.key === featured?.key) : null
+  const leaf = replaying ? null : hovered !== null ? leaves[hovered] : inRoom && !touring ? leaves.find((l) => l.key === featured?.key) : null
   return (
-    <group>
+    <group visible={grown}>
       <mesh ref={stem} material={stemMaterial} castShadow receiveShadow />
       <instancedMesh
         ref={mesh}

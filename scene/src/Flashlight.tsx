@@ -8,6 +8,7 @@ import { easing } from 'maath'
 import * as THREE from 'three'
 import { useScene } from './store'
 import { useT } from './i18n'
+import { building, useBuild } from './build'
 
 const WALL_Z = -0.7475 // the back wall (blender/build_room.py: WALL_Z -0.75)
 const NOTE = new THREE.Vector3(-1.1, 1.08, WALL_Z + 0.002) // bare wall between the window and the diffuser
@@ -64,9 +65,10 @@ export function Flashlight() {
     if (!l) return
     // held a little below and to the right of the eye
     l.position.copy(camera.position).add(new THREE.Vector3(0.12, -0.12, 0).applyQuaternion(camera.quaternion))
-    if (touch) {
+    // (during the replay, build.ts, nobody is holding it either)
+    if (touch || building()) {
       const t = clock.elapsedTime
-      const wandering = performance.now() - touchedAt > HOLD
+      const wandering = !touch || performance.now() - touchedAt > HOLD
       sweep.set(
         Math.sin(t * 0.42) * 0.7 + Math.sin(t * 1.05 + 1) * 0.15,
         Math.sin(t * 0.61 + 0.6) * 0.42 - 0.05 + Math.sin(t * 1.4) * 0.06,
@@ -104,9 +106,10 @@ export function Flashlight() {
 export function TorchHint() {
   const on = useScene((s) => s.lightsOn)
   const inRoom = useScene((s) => s.view === 'room')
+  const replay = useBuild((s) => s.at !== null) // the replay's lights-off moment is over before it could be read
   const [shown, setShown] = useState<'never' | 'now' | 'done'>('never')
   const t = useT()
-  if (!on && inRoom && shown === 'never') setShown('now')
+  if (!on && inRoom && !replay && shown === 'never') setShown('now')
   useEffect(() => {
     if (shown !== 'now') return
     const t = setTimeout(() => setShown('done'), 4500)

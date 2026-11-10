@@ -7,6 +7,7 @@ import { useScene } from './store'
 import { useRoom } from './roomModel'
 import { useOutside, type Sky } from './raipur'
 import { lite } from './device'
+import { reached, useBuild } from './build'
 
 RectAreaLightUniformsLib.init()
 const WHITE = new THREE.Color('#ffffff')
@@ -140,6 +141,8 @@ function useLightning(apply: (flash: number) => void) {
 export function Lights() {
   const { lamp, leds, neon } = useRoom()
   const on = useScene((s) => s.lightsOn)
+  // the LED strips, lamp and neon: off while the replay (build.ts) hasn't reached the commit that lit the room
+  const lamps = useBuild((s) => reached(s, 'fixtures')) && on
   const get = useThree((s) => s.get)
   const out = useOutsideLight()
   const windowLight = useRef<THREE.Light | null>(null)
@@ -212,21 +215,21 @@ export function Lights() {
       {leds.map((l, i) =>
         lite ? (
           // phones: a warm downward spotlight under each shelf instead of an area light along it
-          <LedSpot key={i} x={l.center.x} y={l.center.y} z={l.center.z} intensity={on ? LED_POINT : 0} />
+          <LedSpot key={i} x={l.center.x} y={l.center.y} z={l.center.z} intensity={lamps ? LED_POINT : 0} />
         ) : (
         <AimedRect
           key={i}
           target={[l.center.x, l.center.y - 1, l.center.z - 0.05]}
           color="#ffb662"
-          intensity={on ? 9 : 0}
+          intensity={lamps ? 9 : 0}
           width={l.width}
           height={0.05}
           position={[l.center.x, l.center.y - 0.01, l.center.z]}
         />
       )
       )}
-      <pointLight color="#ffc27a" intensity={on ? 0.9 : 0} distance={1.6} decay={2} position={[lamp.x, lamp.y, lamp.z + 0.05]} />
-      <pointLight color="#fff0d0" intensity={on ? 0.35 : 0} distance={0.9} decay={2} position={[neon.x, neon.y, neon.z + 0.1]} />
+      <pointLight color="#ffc27a" intensity={lamps ? 0.9 : 0} distance={1.6} decay={2} position={[lamp.x, lamp.y, lamp.z + 0.05]} />
+      <pointLight color="#fff0d0" intensity={lamps ? 0.35 : 0} distance={0.9} decay={2} position={[neon.x, neon.y, neon.z + 0.1]} />
 
       {/* warm fill from behind the camera, like the rest of a lamp-lit room */}
       <pointLight color="#ffe1bd" intensity={on ? 0.8 : 0.15} distance={4.5} decay={1.6} position={[0.6, 2.1, 1.4]} />
@@ -241,6 +244,7 @@ export function Lights() {
  */
 export function WindowView() {
   const { view } = useOutsideLight()
+  const built = useBuild((s) => reached(s, 'window')) // the replay (build.ts): no garden before there's a window
   const mat = useRef<THREE.MeshBasicMaterial>(null)
   useLightning((flash) => mat.current?.color.copy(view).lerp(WHITE, flash * 0.8))
   const tex = useTexture('./textures/window_view.jpg', (t) => {
@@ -256,21 +260,23 @@ export function WindowView() {
     return { pos: p, quat: q, w: width, h: (width * 1600) / 2400 }
   }, [])
   return (
-    <mesh position={pos} quaternion={quat}>
+    <mesh position={pos} quaternion={quat} visible={built}>
       <planeGeometry args={[w, h]} />
       <meshBasicMaterial ref={mat} map={tex} toneMapped={false} color={view} />
     </mesh>
   )
 }
 
-/** Soft contact shadows on the desk and floor, rendered once (the room is static). */
+/** Soft contact shadows on the desk and floor, rendered once (the room is static). While the replay (build.ts) is
+ * putting the room together they'd be shadows of things that aren't there yet, so they wait until it's furnished. */
 export function GroundShadows() {
+  const furnished = useBuild((s) => reached(s, 'screen'))
   return (
-    <>
+    <group visible={furnished}>
       <ContactShadows frames={1} position={[-0.115, 0.7605, -0.39]} scale={[2.75, 0.7]} resolution={1024} far={0.4}
         blur={2} opacity={0.6} color="#2a1d14" />
       <ContactShadows frames={1} position={[0.2, 0.002, 0.9]} scale={[3.4, 3.3]} resolution={512} far={1.2} blur={2.5}
         opacity={0.55} color="#2a1d14" />
-    </>
+    </group>
   )
 }

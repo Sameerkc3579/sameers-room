@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber'
 import { easing } from 'maath'
 import * as THREE from 'three'
 import { useScene } from './store'
+import { useBuild } from './build'
 
 const WALL_Z = -0.7475 // the back wall (blender/build_room.py: WALL_Z -0.75)
 const GLOW = '#b4ffc8'
@@ -58,7 +59,8 @@ function paint() {
 }
 
 export function HuntGlow() {
-  const lightsOn = useScene((s) => s.lightsOn)
+  // (the replay's lights-off moment, build.ts, isn't a time to hand out clues)
+  const lightsOn = useScene((s) => s.lightsOn) || useBuild.getState().at !== null
   const mat = useRef<THREE.MeshBasicMaterial>(null)
   const mesh = useRef<THREE.Mesh>(null)
   const map = useMemo(() => paint(), [])

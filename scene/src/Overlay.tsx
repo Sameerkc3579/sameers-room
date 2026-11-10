@@ -8,6 +8,7 @@ import { startTour } from './tour'
 import { usePresence } from './presence'
 import { toggleLang, useLang, useT } from './i18n'
 import { useChat } from './agent'
+import { reached, startBuild, useBuild } from './build'
 
 const RESUME = './os/resume.pdf'
 const OS_2D = './os/index.html'
@@ -35,11 +36,12 @@ function NowPlaying() {
  * many other visitors are here (Fireflies.tsx). */
 function RaipurChip() {
   const inRoom = useScene((s) => s.view === 'room')
+  const built = useBuild((s) => reached(s, 'raipur')) // the replay (build.ts) brings it with its commit
   const { hour, weekday, sky, temp, day, golden } = useOutside()
   const others = usePresence((s) => s.others.length)
   const t = useT()
   return (
-    <div className={`raipur${inRoom ? '' : ' hidden'}`} aria-live="off">
+    <div className={`raipur${inRoom && built ? '' : ' hidden'}`} aria-live="off">
       <p className="raipur-now">
         <span className="raipur-dot" aria-hidden />
         {t('Raipur', 'रायपुर')} · {clockText(hour)} · {temp !== null && `${temp}°C, `}
@@ -112,8 +114,9 @@ function StatsCaption() {
 function SwipeHint() {
   const show = useSwipeHint((s) => s.show)
   const inRoom = useScene((s) => s.view === 'room' && s.tour === null)
+  const replay = useBuild((s) => s.at !== null)
   const t = useT()
-  if (!show || !inRoom) return null
+  if (!show || !inRoom || replay) return null
   return <p className="torch-hint">↔ {t('Swipe to look around the room', 'कमरा देखने के लिए दाएँ-बाएँ स्वाइप करें')}</p>
 }
 
@@ -121,6 +124,7 @@ export function Overlay() {
   const view = useScene((s) => s.view)
   const book = useScene((s) => s.view === 'focus' && BOOKS.includes(s.focus ?? '')) // books have their own Close
   const touring = useScene((s) => s.tour !== null) // the tour card has its own controls
+  const replay = useBuild((s) => s.at !== null) // so does the "how it was built" replay (BuildCard.tsx)
   const setView = useScene((s) => s.setView)
   const lang = useLang((s) => s.lang)
   const t = useT()
@@ -148,7 +152,7 @@ export function Overlay() {
         </button>
       )}
       {/* everything that isn't part of the room, in one dock at the bottom */}
-      <nav className={`dock${view !== 'room' || touring ? ' hidden' : ''}`} aria-label={t('Menu', 'मेन्यू')}>
+      <nav className={`dock${view !== 'room' || touring || replay ? ' hidden' : ''}`} aria-label={t('Menu', 'मेन्यू')}>
         {intro && shown && <p className="dock-caption">{t('Click the glowing dots to explore', 'घूमने के लिए चमकते बिंदुओं पर क्लिक करें')}</p>}
         <button className={`dock-ask${chat.open ? ' on' : ''}`} onClick={() => chat.setOpen(!chat.open)}>
           <img src={AVATAR} alt="" />
@@ -165,6 +169,13 @@ export function Overlay() {
             <span className="tour-full">{t('Hiring? ', 'भर्ती कर रहे हैं? ')}</span>
             {t('60-sec tour', '60 सेकंड का टूर')}
           </span>
+        </button>
+        <button className="dock-build" onClick={startBuild} title={t('Watch the room build itself, commit by commit', 'कमरे को कमिट-दर-कमिट बनते हुए देखें')}>
+          <svg viewBox="0 0 24 24" aria-hidden>
+            <path d="M10 7l4-4 7 7-4 4z" />
+            <path d="M13.5 10.5 4 20" />
+          </svg>
+          <span className="dock-build-text">{t('How it was built', 'कैसे बना')}</span>
         </button>
         <NowPlaying />
         <span className="dock-sep" aria-hidden />

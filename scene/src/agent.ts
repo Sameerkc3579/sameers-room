@@ -7,6 +7,7 @@ import { sendOS } from './osLink'
 import { loadPdfLib } from './pdf'
 import { reply, type Action } from './brain'
 import { startTour } from './tour'
+import { startBuild } from './build'
 
 export interface ChatMsg {
   role: 'user' | 'assistant'
@@ -87,6 +88,9 @@ function run({ tool, input }: Action): number {
     }
     case 'tour':
       startTour()
+      return 0
+    case 'build':
+      startBuild()
       return 0
     case 'back_to_room':
       if (scene.view !== 'room') scene.setView('room')

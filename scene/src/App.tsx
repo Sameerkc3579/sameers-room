@@ -18,6 +18,8 @@ import { LiveData } from './LiveData'
 import { Overlay } from './Overlay'
 import { Chat } from './Chat'
 import { TourCard } from './TourCard'
+import { BuildRig } from './BuildRig'
+import { BuildCard } from './BuildCard'
 import { useScene } from './store'
 import { useT } from './i18n'
 import { lite } from './device'
@@ -128,6 +130,7 @@ export default function App() {
           <Rain />
           <HintTracker />
           <CameraRig />
+          <BuildRig />
           {(high || wantsEffects) && <Effects />}
           <Precompile />
         </Suspense>
@@ -138,6 +141,7 @@ export default function App() {
       <OsLayer />
       <Books />
       <TourCard />
+      <BuildCard />
       <TorchHint />
       <LiveData />
       <Chat />
