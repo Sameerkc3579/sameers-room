@@ -3,7 +3,8 @@
 //             crickets at night (raipur.ts)
 //   inside    a crackle from the candles now and then
 //   things    the lamp's switch and the blinds, a book opening, closing and turning a page, keys when you sit down
-//             at the computer, and the room coming apart and each piece landing as it builds itself (build.ts)
+//             at the computer, the desk clock's dial clicking past each hour (TimeDial.tsx), and the room coming
+//             apart and each piece landing as it builds itself (build.ts)
 // Browsers only allow sound after the visitor's first click, tap or key, so it starts then, fading in. The dock's
 // speaker button turns it all off (SameerOS and its lo-fi too) and the choice is remembered.
 import { create } from 'zustand'
@@ -292,6 +293,17 @@ export function shut() {
   const t = ctx!.currentTime + 0.12 // as the cover lands
   tone(t, { dur: 0.16, f: 120, to: 55, gain: 0.16, attack: 0.003 })
   burst(t, { dur: 0.09, freq: 600, type: 'lowpass', gain: 0.07, attack: 0.002 })
+}
+
+let notched = 0
+/** the desk clock's dial clicking past an hour as it's turned (TimeDial.tsx) */
+export function notch() {
+  if (!live()) return
+  const t = ctx!.currentTime
+  if (t - notched < 0.03) return // spun fast, it purrs instead of buzzing
+  notched = t
+  burst(t, { dur: 0.012, freq: rand(3600, 4400), q: 3, gain: 0.06, attack: 0.001 })
+  tone(t, { dur: 0.025, f: 1250, to: 900, gain: 0.02, attack: 0.002 })
 }
 
 /** the room coming apart for the replay (build.ts) */

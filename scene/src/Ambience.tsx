@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { useScene } from './store'
 import { useRoom } from './roomModel'
 import { clockTexture, drawClock } from './clockTexture'
+import { useOutside } from './raipur'
 import { lite } from './device'
 import { reached, useBuild } from './build'
 
@@ -95,7 +96,7 @@ function Mist() {
   )
 }
 
-/** Desk clock shows the time in Raipur; LED strips, lamp and neon dim with the light switch. */
+/** Desk clock shows the room's time (Raipur's, or the dial's); LED strips, lamp and neon dim with the light switch. */
 function Details() {
   const { scene, glow } = useRoom()
   const lightsOn = useScene((s) => s.lightsOn)
@@ -107,8 +108,9 @@ function Details() {
     if (!face) return
     drawClock()
     face.material = new THREE.MeshBasicMaterial({ map: clockTexture, toneMapped: false })
-    const id = setInterval(drawClock, 15_000)
-    return () => clearInterval(id)
+    // every new minute, Raipur's or the dial's (TimeDial.tsx)
+    const minute = (h: number) => Math.floor(h * 60)
+    return useOutside.subscribe((s, prev) => minute(s.hour) !== minute(prev.hour) && drawClock())
   }, [scene])
 
   useLayoutEffect(() => {

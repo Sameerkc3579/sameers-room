@@ -8,6 +8,7 @@ import { loadPdfLib } from './pdf'
 import { reply, type Action } from './brain'
 import { startTour } from './tour'
 import { startBuild } from './build'
+import { glideTime, openDial, pickTime, type Sky } from './raipur'
 
 export interface ChatMsg {
   role: 'user' | 'assistant'
@@ -92,6 +93,15 @@ function run({ tool, input }: Action): number {
     case 'build':
       startBuild()
       return 0
+    case 'set_time': {
+      // the desk clock (TimeDial.tsx): seen from the room, so the whole room shows the change
+      const glide = scene.view !== 'room'
+      if (glide) scene.setView('room')
+      if ('sky' in input) pickTime({ sky: input.sky as Sky | null })
+      if ('hour' in input) glideTime(input.hour as number | null, 1600)
+      if (input.dial) openDial()
+      return glide ? 1200 : 400
+    }
     case 'back_to_room':
       if (scene.view !== 'room') scene.setView('room')
       return 1200

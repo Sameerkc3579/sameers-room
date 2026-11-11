@@ -6,6 +6,7 @@ import { create } from 'zustand'
 import { useScene } from './store'
 import { endTour } from './tour'
 import { whoosh } from './sound'
+import { backToNow, useOutside } from './raipur'
 
 export const REPO = 'https://github.com/Sameerkc3579/sameers-room'
 
@@ -44,8 +45,9 @@ export const COMMITS: Commit[] = [
   { hash: '7163748', day: NOV(9), title: 'README' },
   { hash: '03cf519', day: NOV(9), title: 'Deploy from GitHub: Vercel builds the room from the repo' },
   { hash: 'e9af740', day: NOV(10), title: 'Watch the room build itself' },
+  { hash: 'de3aa5e', day: NOV(10), title: 'Room sounds' },
   // the newest commit: its own hash can't be written inside it
-  { hash: 'HEAD', day: NOV(10), title: 'Room sounds' },
+  { hash: 'HEAD', day: NOV(11), title: 'Turn the desk clock to any hour and weather' },
 ]
 
 /** what appears (or happens) on a beat; the first five are the Blender room going up, piece by piece */
@@ -66,6 +68,7 @@ export type Piece =
   | 'hunt'
   | 'fireflies'
   | 'dark'
+  | 'clock'
 
 /** where the camera looks during a beat (CameraRig.tsx) */
 export type Look = 'wide' | 'screen' | 'computer' | 'books' | 'window' | 'stats' | 'guestbook' | 'shelf' | 'note'
@@ -108,6 +111,7 @@ export const BEATS: Beat[] = [
   { commits: [24], line: ['Every push now deploys itself', 'अब हर push अपने आप लाइव होता है'], ms: 1700 },
   { commits: [25], line: ["You're watching it", 'आप इसे अभी देख रहे हैं'], ms: 1700 },
   { commits: [26], line: ['Rain, birds, crickets and candles, all made in code', 'बारिश, चिड़ियाँ, झींगुर और मोमबत्तियाँ, सब कोड से बनी'], ms: 1900 },
+  { commits: [27], piece: 'clock', line: ['A whole day goes by, and back to Raipur right now', 'पूरा एक दिन बीतता है, और फिर अभी का रायपुर'], ms: 3600 },
 ]
 
 /** the room comes apart first (decor first, walls last) */
@@ -144,6 +148,7 @@ export function startBuild() {
   if (s.view !== 'room') s.setView('room')
   if (!s.lightsOn) s.toggleLights()
   s.setHover(null)
+  backToNow() // the room as it is in Raipur (the desk clock's commit turns it through a day, then back)
   clock.ms = 0
   whoosh()
   useBuild.setState({ at: -1, paused: false })
@@ -166,6 +171,15 @@ useBuild.subscribe((b) => {
   darkened = dark
   const s = useScene.getState()
   if (s.lightsOn === dark) s.toggleLights()
+})
+
+// the desk clock's commit runs the room through a whole day (BuildRig.tsx), back to Raipur's time when it ends
+let turning = false
+useBuild.subscribe((b) => {
+  const on = b.at === PIECE_AT.clock
+  if (on === turning) return
+  turning = on
+  if (!on && useOutside.getState().pick.hour !== null) backToNow()
 })
 
 // going anywhere else (the tour, a book or the computer, from the chat) ends the replay

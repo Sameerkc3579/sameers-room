@@ -392,6 +392,26 @@ canvas {
   opacity: 0.8;
   font-style: italic;
 }
+/* the desk clock turned to the visitor's own hour (TimeDial.tsx): not live, and a way back */
+.raipur.picked .raipur-dot {
+  background: #ef9d5c;
+  animation: none;
+}
+.raipur-back {
+  margin: 6px 0 0 14px;
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 246, 234, 0.25);
+  border-radius: 999px;
+  background: rgba(255, 246, 234, 0.08);
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.raipur-back:hover {
+  background: rgba(255, 246, 234, 0.16);
+}
 .raipur-others {
   margin-top: 4px !important;
   font-size: 12px;
@@ -1057,6 +1077,286 @@ canvas {
   }
   .build .tour-nav button {
     height: 30px;
+  }
+}
+
+/* ---------- the desk clock's dial (TimeDial.tsx, raipur.ts): the tour's card, with a 24-hour dial ---------- */
+.dial {
+  --w: min(440px, calc(100vw - 32px));
+}
+.dial-body {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 8px;
+}
+.dial-face {
+  --size: 140px;
+  position: relative;
+  flex: none;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.dial-face:active {
+  cursor: grabbing;
+}
+.dial-face:focus-visible {
+  outline: 2px solid #a9c99a;
+  outline-offset: 5px;
+}
+/* the sky round the day: a ring of colour, night at the bottom */
+.dial-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 17px), #000 calc(100% - 16px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 17px), #000 calc(100% - 16px));
+  opacity: 0.92;
+}
+/* Raipur's real time, just outside the ring */
+.dial-now {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 8px;
+  margin: -4px 0 0 -1.5px;
+  border-radius: 2px;
+  background: #a9c99a;
+  transform: rotate(var(--now)) translateY(calc(var(--size) / -2 - 6px));
+}
+.dial-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border-radius: 50%;
+  background: #fff3d6;
+  box-shadow: 0 0 0 3px rgba(26, 31, 23, 0.9), 0 0 14px rgba(255, 214, 140, 0.75);
+  transform: rotate(var(--a)) translateY(calc(var(--size) / -2 + 8px));
+  pointer-events: none;
+}
+.dial-knob.night {
+  background: #d9e1f2;
+  box-shadow: 0 0 0 3px rgba(26, 31, 23, 0.9), 0 0 12px rgba(170, 190, 240, 0.6);
+}
+.dial-center {
+  position: absolute;
+  inset: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: center;
+  pointer-events: none;
+}
+.dial-center b {
+  font: 600 19px/1.15 'Segoe UI', system-ui, sans-serif;
+  white-space: nowrap;
+}
+.dial-center small {
+  max-width: 84px;
+  color: rgba(243, 241, 232, 0.65);
+  font-size: 11.5px;
+  line-height: 1.2;
+}
+.dial-sun,
+.dial-moon {
+  position: absolute;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  fill: none;
+  stroke: rgba(243, 241, 232, 0.5);
+  stroke-width: 2;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+.dial-sun {
+  top: 27px;
+}
+.dial-moon {
+  bottom: 27px;
+}
+.dial-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.tour .dial-tip {
+  margin: 0;
+  color: rgba(243, 241, 232, 0.65);
+  font-size: 13px;
+  line-height: 1.35;
+}
+.dial-skies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dial-sky {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px 5px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font: 500 13px 'Segoe UI', system-ui, sans-serif;
+  cursor: pointer;
+}
+.dial-sky.on {
+  border-color: transparent;
+  background: #5f7f56;
+}
+.dial-sky svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Raipur's weather right now */
+.dial-live {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9fd38a;
+  box-shadow: 0 0 0 2px rgb(26, 31, 23);
+}
+/* the way back and the "live" line take the same room, so the card (and the dial under a finger) never moves */
+.tour .dial-back,
+.tour .dial-live-note {
+  box-sizing: border-box;
+  height: 32px;
+  white-space: nowrap;
+}
+.tour .dial-back {
+  align-self: flex-start;
+  padding: 0 12px;
+  font-size: 13px;
+}
+.dial-back-short {
+  display: none;
+}
+.tour .dial-live-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: rgba(243, 241, 232, 0.7);
+  font-size: 13px;
+}
+@media (hover: hover) {
+  .dial-sky:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .dial-sky.on:hover {
+    background: #6a8b60;
+  }
+}
+@media (max-width: 600px) {
+  .dial-face {
+    --size: 124px;
+  }
+  .dial-body {
+    gap: 14px;
+    margin-top: 4px;
+  }
+  .dial-center {
+    inset: 20px;
+  }
+  .dial-center b {
+    font-size: 17px;
+  }
+  .dial-sun {
+    top: 24px;
+  }
+  .dial-moon {
+    bottom: 24px;
+  }
+  .tour .dial-tip {
+    display: none;
+  }
+  .dial-back-long {
+    display: none;
+  }
+  .dial-back-short {
+    display: inline;
+  }
+}
+/* the narrowest phones (a folded Galaxy Fold): a smaller dial, the weather as icons */
+@media (max-width: 340px) {
+  .dial-face {
+    --size: 108px;
+  }
+  .dial-center {
+    inset: 17px;
+  }
+  .dial-center b {
+    font-size: 15px;
+  }
+  .dial-center small {
+    font-size: 10.5px;
+  }
+  .dial-sun {
+    top: 19px;
+  }
+  .dial-moon {
+    bottom: 19px;
+  }
+  .dial-body {
+    gap: 12px;
+  }
+  .dial-sky {
+    padding: 6px 8px;
+  }
+  .dial-sky-name,
+  .dial-back-time {
+    display: none;
+  }
+}
+/* phones on their side: a slimmer card */
+@media (max-height: 500px) {
+  .dial {
+    bottom: 8px;
+    padding: 8px 14px 10px;
+  }
+  .dial-face {
+    --size: 112px;
+  }
+  .dial-center {
+    inset: 18px;
+  }
+  .dial-sun {
+    top: 21px;
+  }
+  .dial-moon {
+    bottom: 21px;
+  }
+  .dial-body {
+    margin-top: 2px;
+  }
+  .tour .dial-tip {
+    display: none;
   }
 }
 

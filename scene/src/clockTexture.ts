@@ -1,7 +1,8 @@
 import * as THREE from 'three'
 import { useOutside } from './raipur'
 
-/** The desk clock's face: the time in Raipur (the room's home), redrawn every 15 s (see Ambience.tsx). */
+/** The desk clock's face: the room's time (Raipur's, or the hour picked on the dial), redrawn as it changes
+ * (see Ambience.tsx). */
 export const clockTexture = (() => {
   const c = document.createElement('canvas')
   c.width = 256

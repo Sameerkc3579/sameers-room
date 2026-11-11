@@ -20,6 +20,7 @@ import { Chat } from './Chat'
 import { TourCard } from './TourCard'
 import { BuildRig } from './BuildRig'
 import { BuildCard } from './BuildCard'
+import { TimeDial } from './TimeDial'
 import { useScene } from './store'
 import { useT } from './i18n'
 import { lite } from './device'
@@ -142,6 +143,7 @@ export default function App() {
       <Books />
       <TourCard />
       <BuildCard />
+      <TimeDial />
       <TorchHint />
       <LiveData />
       <Chat />

@@ -1,13 +1,20 @@
 // The room is in Raipur: the light through the window follows Raipur's clock and its live weather (Open-Meteo,
-// no key needed). Lights.tsx and Rain.tsx read this; the overlay shows it as a little chip.
+// no key needed). Lights.tsx and Rain.tsx read this; the overlay shows it as a little chip. Visitors can also turn
+// the desk clock (TimeDial.tsx) to any hour and weather they like, until they go back to Raipur's own.
 // Preview any moment with URL params, e.g.  ?raipur=19:10&sky=storm   (sky: clear | cloudy | fog | rain | storm)
 import { create } from 'zustand'
 import { t } from './i18n'
 
 export type Sky = 'clear' | 'cloudy' | 'fog' | 'rain' | 'storm'
 
+/** an hour and weather picked on the desk clock; null where the room follows Raipur */
+export interface Choice {
+  hour: number | null
+  sky: Sky | null
+}
+
 interface Outside {
-  /** Raipur local time in hours (14.5 = 2:30 pm) and its weekday (0 = Sunday) */
+  /** the room's time in hours (14.5 = 2:30 pm), and Raipur's weekday (0 = Sunday) */
   hour: number
   weekday: number
   sunrise: number
@@ -19,6 +26,10 @@ interface Outside {
   day: number
   /** 0 … 1: how close to sunrise / sunset (warm, low light) */
   golden: number
+  /** Raipur as it really is right now, whatever the room shows (the chat answers with this) */
+  real: { hour: number; sky: Sky }
+  /** what the visitor picked on the desk clock */
+  pick: Choice
 }
 
 const RAIPUR = { lat: 21.2514, lon: 81.6296 }
@@ -55,16 +66,26 @@ function skyOf(code: number): Sky {
 
 const forcedSky = (['clear', 'cloudy', 'fog', 'rain', 'storm'] as Sky[]).find((s) => s === params.get('sky'))
 
+/** what the room shows: Raipur's time and weather, or the visitor's pick */
+function shown({ real, pick, sunrise, sunset }: Pick<Outside, 'real' | 'pick' | 'sunrise' | 'sunset'>) {
+  const hour = pick.hour ?? real.hour
+  return { hour, sky: pick.sky ?? real.sky, ...light(hour, sunrise, sunset) }
+}
+
 export const useOutside = create<Outside>(() => {
   const { hour, weekday } = raipurNow()
   // typical Raipur sun times until the forecast arrives
-  return { hour, weekday, sunrise: 6.1, sunset: 17.6, sky: forcedSky ?? 'clear', temp: null, ...light(hour, 6.1, 17.6) }
+  const base = { weekday, sunrise: 6.1, sunset: 17.6, temp: null, real: { hour, sky: forcedSky ?? 'clear' }, pick: { hour: null, sky: null } }
+  return { ...base, ...shown(base) }
 })
+
+function update(change: Partial<Outside>) {
+  useOutside.setState({ ...change, ...shown({ ...useOutside.getState(), ...change }) })
+}
 
 function tick() {
   const { hour, weekday } = raipurNow()
-  const { sunrise, sunset } = useOutside.getState()
-  useOutside.setState({ hour, weekday, ...light(hour, sunrise, sunset) })
+  update({ weekday, real: { ...useOutside.getState().real, hour } })
 }
 
 async function fetchWeather() {
@@ -78,10 +99,10 @@ async function fetchWeather() {
   }
   const sunrise = d.daily?.sunrise?.[0] ? hours(d.daily.sunrise[0]) : 6.1
   const sunset = d.daily?.sunset?.[0] ? hours(d.daily.sunset[0]) : 17.6
-  useOutside.setState({
+  update({
     sunrise,
     sunset,
-    sky: forcedSky ?? skyOf(Number(d.current?.weather_code ?? 0)),
+    real: { ...useOutside.getState().real, sky: forcedSky ?? skyOf(Number(d.current?.weather_code ?? 0)) },
     temp: typeof d.current?.temperature_2m === 'number' ? Math.round(d.current.temperature_2m) : null,
   })
   tick()
@@ -96,6 +117,57 @@ export function startOutside() {
   const load = () => fetchWeather().catch(() => {}) // offline: clear skies, typical sun times
   load()
   setInterval(load, 15 * 60_000)
+}
+
+/* ---------- the desk clock (TimeDial.tsx): the visitor's own hour and weather ---------- */
+
+export const picked = (s: Outside) => s.pick.hour !== null || s.pick.sky !== null
+
+/** Raipur as it really is, whatever the desk clock shows (the chat answers with this) */
+export function raipurNowReal() {
+  const s = useOutside.getState()
+  return { ...s, ...s.real, ...light(s.real.hour, s.sunrise, s.sunset) }
+}
+
+/** the dial's card is open (tapping the clock opens it) */
+export const useDial = create<{ open: boolean }>(() => ({ open: false }))
+export const openDial = () => useDial.setState({ open: true })
+export const closeDial = () => useDial.setState({ open: false })
+
+let glide = 0
+/** sets the room's hour and/or weather (null: Raipur's own again) */
+export function pickTime(c: Partial<Choice>) {
+  if ('hour' in c) cancelAnimationFrame(glide)
+  update({ pick: { ...useOutside.getState().pick, ...c } })
+}
+
+/** the shorter way round the clock from one hour to another (-12 … 12) */
+export const hoursBetween = (from: number, to: number) => ((((to - from) % 24) + 36) % 24) - 12
+
+/** turns the room's clock to an hour (null: Raipur's own time) over a moment, the short way round, so the light
+ * sweeps across the room instead of jumping */
+export function glideTime(to: number | null, ms = 1100) {
+  cancelAnimationFrame(glide)
+  if (to === null && useOutside.getState().pick.hour === null) return // already on Raipur's time
+  const from = useOutside.getState().hour
+  const d = hoursBetween(from, to ?? useOutside.getState().real.hour)
+  const t0 = performance.now()
+  const step = (now: number) => {
+    const k = Math.min(1, (now - t0) / ms)
+    const e = k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2
+    const pick = useOutside.getState().pick
+    if (k < 1) {
+      update({ pick: { ...pick, hour: (((from + d * e) % 24) + 24) % 24 } })
+      glide = requestAnimationFrame(step)
+    } else update({ pick: { ...pick, hour: to } })
+  }
+  glide = requestAnimationFrame(step)
+}
+
+/** back to Raipur's own time and weather */
+export function backToNow() {
+  pickTime({ sky: null })
+  glideTime(null)
 }
 
 /* ---------- words for the overlay chip ---------- */

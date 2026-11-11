@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { BOOKS, useScene } from './store'
 import { useSwipeHint } from './pan'
 import { sendOS } from './osLink'
-import { clockText, doing, skyText, useOutside } from './raipur'
+import { backToNow, clockText, doing, picked, skyText, useDial, useOutside } from './raipur'
 import { solvedText, useStats } from './live'
 import { startTour } from './tour'
 import { usePresence } from './presence'
@@ -34,21 +34,32 @@ function NowPlaying() {
 }
 
 /** Top-left in the room: what time and weather it is in Raipur right now, what Sameer is probably doing, and how
- * many other visitors are here (Fireflies.tsx). */
+ * many other visitors are here (Fireflies.tsx). With the desk clock turned (TimeDial.tsx) it shows the room's time
+ * instead, and the way back to Raipur's. */
 function RaipurChip() {
   const inRoom = useScene((s) => s.view === 'room')
   const built = useBuild((s) => reached(s, 'raipur')) // the replay (build.ts) brings it with its commit
-  const { hour, weekday, sky, temp, day, golden } = useOutside()
+  const o = useOutside()
+  const { hour, weekday, sky, temp, day, golden } = o
+  const own = picked(o)
+  // the dial's card has its own way back, and the replay (build.ts) turns the clock round and back by itself
+  const dial = useDial((s) => s.open)
+  const replay = useBuild((s) => s.at !== null)
   const others = usePresence((s) => s.others.length)
   const t = useT()
   return (
-    <div className={`raipur${inRoom && built ? '' : ' hidden'}`} aria-live="off">
+    <div className={`raipur${inRoom && built ? '' : ' hidden'}${own ? ' picked' : ''}`} aria-live="off">
       <p className="raipur-now">
         <span className="raipur-dot" aria-hidden />
-        {t('Raipur', 'रायपुर')} · {clockText(hour)} · {temp !== null && `${temp}°C, `}
+        {own ? t('On the clock', 'घड़ी पर') : t('Raipur', 'रायपुर')} · {clockText(hour)} · {!own && temp !== null && `${temp}°C, `}
         {skyText(sky, day, golden, hour)}
       </p>
       <p className="raipur-doing">{doing(hour, weekday)}</p>
+      {own && !dial && !replay && (
+        <button className="raipur-back" onClick={backToNow}>
+          ↺ {t(`Back to Raipur now · ${clockText(o.real.hour)}`, `अभी के रायपुर पर वापस · ${clockText(o.real.hour)}`)}
+        </button>
+      )}
       {others > 0 && (
         <p
           className="raipur-others"
@@ -116,8 +127,9 @@ function SwipeHint() {
   const show = useSwipeHint((s) => s.show)
   const inRoom = useScene((s) => s.view === 'room' && s.tour === null)
   const replay = useBuild((s) => s.at !== null)
+  const dial = useDial((s) => s.open) // its card sits where the hint would
   const t = useT()
-  if (!show || !inRoom || replay) return null
+  if (!show || !inRoom || replay || dial) return null
   return <p className="torch-hint">↔ {t('Swipe to look around the room', 'कमरा देखने के लिए दाएँ-बाएँ स्वाइप करें')}</p>
 }
 
@@ -126,6 +138,7 @@ export function Overlay() {
   const book = useScene((s) => s.view === 'focus' && BOOKS.includes(s.focus ?? '')) // books have their own Close
   const touring = useScene((s) => s.tour !== null) // the tour card has its own controls
   const replay = useBuild((s) => s.at !== null) // so does the "how it was built" replay (BuildCard.tsx)
+  const dial = useDial((s) => s.open) // and the desk clock's dial (TimeDial.tsx)
   const setView = useScene((s) => s.setView)
   const lang = useLang((s) => s.lang)
   const sound = useSound((s) => s.on)
@@ -154,7 +167,7 @@ export function Overlay() {
         </button>
       )}
       {/* everything that isn't part of the room, in one dock at the bottom */}
-      <nav className={`dock${view !== 'room' || touring || replay ? ' hidden' : ''}`} aria-label={t('Menu', 'मेन्यू')}>
+      <nav className={`dock${view !== 'room' || touring || replay || dial ? ' hidden' : ''}`} aria-label={t('Menu', 'मेन्यू')}>
         {intro && shown && <p className="dock-caption">{t('Click the glowing dots to explore', 'घूमने के लिए चमकते बिंदुओं पर क्लिक करें')}</p>}
         <button className={`dock-ask${chat.open ? ' on' : ''}`} onClick={() => chat.setOpen(!chat.open)}>
           <img src={AVATAR} alt="" />

@@ -19,6 +19,7 @@ const HINDI: Record<string, string> = {
   notebooks: 'रिज़्यूमे',
   stats: 'मेरे आँकड़े',
   guestbook: 'गेस्टबुक',
+  clock: 'समय बदलें',
 }
 
 /*

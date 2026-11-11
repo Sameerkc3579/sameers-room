@@ -19,6 +19,9 @@ stats, and the room follows the time and weather in Raipur.
 - **Guestbook**: every note grows a new leaf on the vine along the top shelf.
 - **Fireflies**: other visitors, live, drifting near whatever they're looking at.
 - **Lights off**: the blinds close and your cursor becomes a torch.
+- **Turn the desk clock**: tap the clock on the desk and turn its dial to any hour, in any weather. The light, the
+  garden outside, the rain, the birds and the crickets all follow, and the chip at the top left goes back to Raipur's
+  real time. The chat does it too: "show me the room at night", "make it rain".
 - **Room sounds**, all generated in code: rain on the window when it's raining in Raipur, birds by day, crickets at
   night, the candles, the lamp, the blinds, pages and keys. The speaker in the dock turns them off.
 - **Break my agent**: a 6-level prompt-injection game in SameerOS.

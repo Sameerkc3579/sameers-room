@@ -105,14 +105,14 @@ export function useRoom(): RoomInfo {
     })
 
     const anchors: Record<string, THREE.Vector3> = {}
-    for (const [key, { name, at: where }] of Object.entries(ANCHORS)) {
+    for (const [key, { name, at: where, lift = 0 }] of Object.entries(ANCHORS)) {
       if (!scene.getObjectByName(name)) continue
       const b = box(name)
       const c = b.getCenter(new THREE.Vector3())
       anchors[key] =
         where === 'front'
           ? new THREE.Vector3(c.x, c.y - (b.max.y - c.y) * 0.45, b.max.z + 0.02)
-          : new THREE.Vector3(c.x, b.max.y + 0.035, c.z + (b.max.z - c.z) * 0.6)
+          : new THREE.Vector3(c.x, b.max.y + 0.035 + lift, c.z + (b.max.z - c.z) * 0.6)
     }
 
     return {

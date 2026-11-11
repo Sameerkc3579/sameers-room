@@ -10,6 +10,7 @@ import { useRoom } from './roomModel'
 import { keyOf } from './interactables'
 import { lite } from './device'
 import { land } from './sound'
+import { pickTime, useOutside } from './raipur'
 
 type Arrive = 'grow' | 'rise' | 'drop' | 'pop'
 
@@ -177,6 +178,16 @@ function light(rig: Rig, at: number, ms: number) {
   rig.pulsing = pulse
 }
 
+/** the desk clock's commit: the room's clock runs once round the day, from Raipur's time back to it */
+function turnClock(at: number, ms: number) {
+  if (at !== PIECE_AT.clock) return
+  const k = THREE.MathUtils.clamp((ms - START[at] - 300) / (BEATS[at].ms - 800), 0, 1)
+  const e = k * k * (3 - 2 * k)
+  const o = useOutside.getState()
+  const hour = k >= 1 ? null : (o.real.hour + 24 * e) % 24
+  if (hour !== o.pick.hour) pickTime({ hour })
+}
+
 export function BuildRig() {
   const { scene } = useRoom()
   const get = useThree((s) => s.get)
@@ -208,6 +219,7 @@ export function BuildRig() {
     if (moved && (!lite || landed)) gl.shadowMap.needsUpdate = true
 
     light(r, at, ms)
+    turnClock(at, ms)
   })
   return null
 }

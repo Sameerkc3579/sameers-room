@@ -3,6 +3,7 @@ import type { Object3D } from 'three'
 import { useScene } from './store'
 import { sendOS, type ToOS } from './osLink'
 import { loadPdfLib } from './pdf'
+import { openDial } from './raipur'
 
 export interface Interactable {
   label: string
@@ -35,6 +36,8 @@ export const INTERACTABLES: Record<string, Interactable> = {
     },
   },
   lamp: { label: 'Lights on / off', action: () => useScene.getState().toggleLights() },
+  // turn the room to any hour and weather (TimeDial.tsx); the camera stays put so the whole room shows the change
+  clock: { label: 'Change the time', action: openDial },
   stats: { label: 'My stats', action: focus('stats') },
   guestbook: { label: 'Guestbook', action: focus('guestbook') },
   // the puzzle hunt's first clue (hunt.ts): no hint dot, it's for the curious
@@ -51,6 +54,8 @@ const BY_NAME: Record<string, string> = {
   Quote_Frame: 'quote',
   Notebooks: 'notebooks',
   Mushroom_Lamp: 'lamp',
+  Desk_Clock: 'clock',
+  DeskClock_Screen: 'clock',
   Stats: 'stats', // pinned.ts
   Guestbook: 'guestbook',
   Hunt_Note: 'huntnote', // pinned.ts
@@ -58,13 +63,15 @@ const BY_NAME: Record<string, string> = {
 
 /** The object each hint marker sits on (see Hints.tsx): just above it, or on its front face for objects that
  * sit at the top edge of the view (the quote print on the upper shelf). */
-export const ANCHORS: Record<string, { name: string; at: 'top' | 'front'; hidden?: boolean }> = {
+export const ANCHORS: Record<string, { name: string; at: 'top' | 'front'; hidden?: boolean; lift?: number }> = {
   monitor: { name: 'Monitor', at: 'top' },
   books: { name: 'Books', at: 'top' },
   headphones: { name: 'Headphones', at: 'top' },
   quote: { name: 'Quote_Frame', at: 'front' },
   notebooks: { name: 'Notebooks', at: 'top' },
   lamp: { name: 'Mushroom_Lamp', at: 'top' },
+  // a little higher, so its label clears the Projects one (more on touch screens, where every label stays open)
+  clock: { name: 'Desk_Clock', at: 'top', lift: matchMedia('(pointer: coarse)').matches || innerWidth < 600 ? 0.09 : 0.05 },
   stats: { name: 'Stats_Card', at: 'front' },
   guestbook: { name: 'Guestbook', at: 'front' },
   huntnote: { name: 'Hunt_Note', at: 'front', hidden: true }, // the camera can go there, but no dot shows it

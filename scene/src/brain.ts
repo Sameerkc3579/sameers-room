@@ -5,7 +5,7 @@
 import { profile, GITHUB, LINKEDIN, EMAIL } from '../../os/src/content/profile'
 import { projects, alsoBuilt, type Project } from '../../os/src/content/projects'
 import { solvedText, useNotes, useStats } from './live'
-import { clockText, doing, skyText, useOutside } from './raipur'
+import { clockText, doing, picked, raipurNowReal, skyText, useOutside, type Sky } from './raipur'
 import { useScene } from './store'
 import { useHunt } from './hunt'
 import { DOING, someone, usePresence } from './presence'
@@ -147,17 +147,64 @@ function dsa() {
 }
 
 function raipur(q: Question) {
-  const o = useOutside.getState()
+  const o = raipurNowReal() // what's really out there, whatever the desk clock shows
   const sky = skyText(o.sky, o.day, o.golden, o.hour)
   const temp = o.temp !== null ? `${o.temp}°C` : null
   const wet = o.sky === 'rain' || o.sky === 'storm'
+  const turned = picked(useOutside.getState()) // the room shows the visitor's own hour or weather (TimeDial.tsx)
+  const shows = turned ? " The room's showing what you picked on the desk clock, though." : ''
   if (q.has('rain', 'raining', 'baarish', 'barish', 'storm'))
     return wet
-      ? `Yes, it's ${sky} in Raipur right now. You can see it through the window.`
-      : `No rain right now. It's ${sky} in Raipur${temp ? `, ${temp}` : ''}.`
+      ? `Yes, it's ${sky} in Raipur right now.${turned ? shows : ' You can see it through the window.'}`
+      : `No rain right now. It's ${sky} in Raipur${temp ? `, ${temp}` : ''}.${shows}`
   if (q.has('weather', 'temperature', 'hot', 'cold', 'mausam'))
-    return `It's ${temp ? `${temp} and ` : ''}${sky} in Raipur right now. The window shows the real weather, rain included.`
+    return `It's ${temp ? `${temp} and ` : ''}${sky} in Raipur right now.${turned ? shows : ' The window shows the real weather, rain included.'}`
   return `It's ${clockText(o.hour)} in Raipur right now${temp ? `, ${temp}` : ''} and ${sky}. ${doing(o.hour, o.weekday).replace('Sameer is', "So I'm")}`
+}
+
+/** "show me the room at night", "make it rain", "back to the real time": a turn of the desk clock (TimeDial.tsx) */
+interface ClockAsk {
+  hour?: number | null
+  sky?: Sky | null
+  /** how the reply says it: "at sunset", "in the rain" */
+  when?: string
+  weather?: string
+  dial?: boolean
+}
+function clockAsk(q: Question): ClockAsk | null {
+  if (q.has('time travel', 'time machine', 'change the time', 'change time', 'set the time', 'turn the clock', 'desk clock', 'samay badlo'))
+    return { dial: true }
+  const o = useOutside.getState()
+  // (only once the clock's been turned: before that, "the real time" is a question for the 'time' topic)
+  if (picked(o) && q.has('back to now', 'real time', 'actual time', 'current time', 'back to normal', 'normal time', 'reset', 'live time', 'back to raipur'))
+    return { hour: null, sky: null }
+  if (!q.has('show', 'make', 'set', 'change', 'switch', 'turn', 'see', 'look', 'looks', 'let', 'dikhao', 'dikha', 'karo', 'kardo'))
+    return null
+  const TIMES: [string[], number, string][] = [
+    [['midnight', 'aadhi raat'], 0, 'at midnight'],
+    [['sunrise', 'dawn', 'suryoday'], o.sunrise + 0.15, 'at sunrise'],
+    [['morning', 'subah'], 8.5, 'in the morning'],
+    [['noon', 'afternoon', 'day', 'daytime', 'daylight', 'dopahar', 'din'], 13, 'in the afternoon'],
+    [['sunset', 'dusk', 'golden hour', 'suryast'], o.sunset - 0.1, 'at sunset'],
+    [['evening', 'shaam', 'sham'], o.sunset + 0.9, 'in the evening'],
+    [['night', 'nighttime', 'raat'], 22.5, 'at night'],
+  ]
+  const SKIES: [string[], Sky, string][] = [
+    [['storm', 'stormy', 'thunder*', 'lightning', 'toofan', 'tufaan'], 'storm', 'in a thunderstorm'],
+    [['rain', 'raining', 'rainy', 'baarish', 'barish', 'monsoon'], 'rain', 'in the rain'],
+    [['fog', 'foggy', 'haze', 'hazy', 'misty', 'smog', 'dhundh'], 'fog', 'in the haze'],
+    [['cloudy', 'clouds', 'overcast', 'badal'], 'cloudy', 'under the clouds'],
+    [['sunny', 'clear sky', 'clear skies', 'clear weather', 'dhoop'], 'clear', 'under clear skies'],
+  ]
+  const time = TIMES.find(([w]) => q.has(...w))
+  const sky = SKIES.find(([w]) => q.has(...w))
+  if (!time && !sky) return null
+  const out: ClockAsk = {}
+  if (time) [, out.hour, out.when] = time
+  if (sky) [, out.sky, out.weather] = sky
+  // sunshine needs the sun up
+  if (!time && q.has('sunny', 'dhoop') && o.day < 0.5) [out.hour, out.when] = [13, 'in the afternoon']
+  return out
 }
 
 /* ---------- memory ---------- */
@@ -236,6 +283,25 @@ const TOPICS: Topic[] = [
       const on = q.has('on', 'bright', 'brighter', 'jala', 'jalao', 'chalu') ? true : q.has('off', 'dark', 'darker', 'band', 'bujha', 'bujhao') ? false : !now
       if (on === now) return say(on ? 'The lights are already on.' : "They're already off. Cozy, right?")
       return say(on ? 'Lights on.' : vary('lights', 'Lights off. Much cozier.', 'Lights off. The neon looks better this way anyway.'), act('set_lights', { on }))
+    },
+  },
+  {
+    id: 'clock',
+    kind: 'do',
+    score: (q) => (clockAsk(q) ? 3 : 0),
+    answer: (q) => {
+      const ask = clockAsk(q)!
+      const o = raipurNowReal()
+      if (ask.dial) return say('Here’s the desk clock. Turn its dial to any hour and pick the weather, and the whole room follows.', act('set_time', { dial: true }))
+      if (ask.hour === null && ask.sky === null)
+        return say(`Back to Raipur as it really is: ${clockText(o.hour)} and ${skyText(o.sky, o.day, o.golden, o.hour)}.`, act('set_time', { hour: null, sky: null }))
+      const first = !memory.said.clock
+      return say(
+        `Here’s the room ${[ask.when, ask.weather].filter(Boolean).join(' ')}.${
+          first ? ' You can turn the desk clock to any hour yourself, and the chip at the top left takes it back to Raipur’s real time.' : ''
+        }`,
+        act('set_time', { ...('hour' in ask ? { hour: ask.hour } : {}), ...('sky' in ask ? { sky: ask.sky } : {}) }),
+      )
     },
   },
   {
@@ -514,7 +580,10 @@ const TOPICS: Topic[] = [
   {
     id: 'time',
     kind: 'say',
-    score: (q) => (q.has('what time', 'time is it', 'time there', 'time in raipur', 'local time', 'weather', 'raining', 'rain', 'temperature', 'hot', 'cold', 'mausam', 'baarish', 'barish', 'sunny', 'clock') ? 2.5 : 0),
+    score: (q) =>
+      !clockAsk(q) && q.has('what time', 'time is it', 'time there', 'time in raipur', 'local time', 'weather', 'raining', 'rain', 'temperature', 'hot', 'cold', 'mausam', 'baarish', 'barish', 'sunny', 'clock')
+        ? 2.5
+        : 0,
     answer: (q) => say(raipur(q)),
   },
   {
@@ -538,14 +607,14 @@ const TOPICS: Topic[] = [
     },
     answer: () =>
       say(
-        `Watch: the room comes apart, then builds itself again in the order I really built it, one commit at a time: ${COMMITS.length} commits from Nov 1 to Nov 10.`,
+        `Watch: the room comes apart, then builds itself again in the order I really built it, one commit at a time: ${COMMITS.length} commits from ${COMMITS[0].day[0]} to ${COMMITS[COMMITS.length - 1].day[0]}.`,
         act('build'),
       ),
   },
   {
     id: 'room',
     kind: 'say',
-    score: (q) => (q.has('this room', 'the room', 'this website', 'this site', 'how did you make', 'how was this made', 'three js', 'threejs', '3d') ? 2.2 : 0),
+    score: (q) => (!clockAsk(q) && q.has('this room', 'the room', 'this website', 'this site', 'how did you make', 'how was this made', 'three js', 'threejs', '3d') ? 2.2 : 0),
     answer: () =>
       say('This room is my portfolio: it’s built with React Three Fiber, modelled in Blender, and the monitor runs SameerOS, a small OS I wrote. Ask me how it was built to watch it go up, commit by commit.'),
   },
