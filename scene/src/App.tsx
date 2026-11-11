@@ -21,6 +21,7 @@ import { TourCard } from './TourCard'
 import { BuildRig } from './BuildRig'
 import { BuildCard } from './BuildCard'
 import { TimeDial } from './TimeDial'
+import { PhotoCard, PhotoRig } from './Photo'
 import { useScene } from './store'
 import { useT } from './i18n'
 import { lite } from './device'
@@ -132,6 +133,7 @@ export default function App() {
           <HintTracker />
           <CameraRig />
           <BuildRig />
+          <PhotoRig />
           {(high || wantsEffects) && <Effects />}
           <Precompile />
         </Suspense>
@@ -144,6 +146,7 @@ export default function App() {
       <TourCard />
       <BuildCard />
       <TimeDial />
+      <PhotoCard />
       <TorchHint />
       <LiveData />
       <Chat />

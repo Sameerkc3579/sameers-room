@@ -9,6 +9,7 @@ import { reply, type Action } from './brain'
 import { startTour } from './tour'
 import { startBuild } from './build'
 import { glideTime, openDial, pickTime, type Sky } from './raipur'
+import { takePhoto } from './polaroid'
 
 export interface ChatMsg {
   role: 'user' | 'assistant'
@@ -102,6 +103,13 @@ function run({ tool, input }: Action): number {
       if (input.dial) openDial()
       return glide ? 1200 : 400
     }
+    case 'photo':
+      // the picture is of the room: go back to it first if a book or the computer is open
+      if (scene.view !== 'room') {
+        scene.setView('room')
+        setTimeout(takePhoto, 1300)
+      } else takePhoto()
+      return 400
     case 'back_to_room':
       if (scene.view !== 'room') scene.setView('room')
       return 1200

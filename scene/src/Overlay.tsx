@@ -10,6 +10,7 @@ import { toggleLang, useLang, useT } from './i18n'
 import { useChat } from './agent'
 import { reached, startBuild, useBuild } from './build'
 import { toggleSound, useSound } from './sound'
+import { takePhoto, usePhoto } from './polaroid'
 
 const RESUME = './os/resume.pdf'
 const OS_2D = './os/index.html'
@@ -22,7 +23,12 @@ function NowPlaying() {
   const t = useT()
   if (!music.playing) return null
   return (
-    <button className="dock-music" onClick={() => sendOS({ type: 'os:music', action: 'toggle' })} title={t('Pause', 'रोकें')}>
+    <button
+      className="dock-music"
+      onClick={() => sendOS({ type: 'os:music', action: 'toggle' })}
+      title={t('Pause', 'रोकें')}
+      aria-label={`${t('Pause lo-fi', 'लो-फ़ाई रोकें')} · ${music.track}`} // (the track's name is hidden on smaller screens)
+    >
       <span className="eq" aria-hidden>
         <i />
         <i />
@@ -142,6 +148,8 @@ export function Overlay() {
   const setView = useScene((s) => s.setView)
   const lang = useLang((s) => s.lang)
   const sound = useSound((s) => s.on)
+  const taking = usePhoto((s) => s.taking)
+  const playing = useScene((s) => s.music.playing) // its chip in the dock takes room: the dock tightens up (styles.css)
   const t = useT()
   const chat = useChat()
   // the dock's "click the dots" line shows for a while once the room is drawn, then goes
@@ -167,7 +175,7 @@ export function Overlay() {
         </button>
       )}
       {/* everything that isn't part of the room, in one dock at the bottom */}
-      <nav className={`dock${view !== 'room' || touring || replay || dial ? ' hidden' : ''}`} aria-label={t('Menu', 'मेन्यू')}>
+      <nav className={`dock${view !== 'room' || touring || replay || dial ? ' hidden' : ''}${playing ? ' playing' : ''}`} aria-label={t('Menu', 'मेन्यू')}>
         {intro && shown && <p className="dock-caption">{t('Click the glowing dots to explore', 'घूमने के लिए चमकते बिंदुओं पर क्लिक करें')}</p>}
         <button className={`dock-ask${chat.open ? ' on' : ''}`} onClick={() => chat.setOpen(!chat.open)}>
           <img src={AVATAR} alt="" />
@@ -192,6 +200,19 @@ export function Overlay() {
             <path d="M13.5 10.5 4 20" />
           </svg>
           <span className="dock-build-text">{t('How it was built', 'कैसे बना')}</span>
+        </button>
+        <button
+          className="dock-photo"
+          onClick={takePhoto}
+          disabled={taking}
+          aria-label={t('Take a polaroid', 'पोलरॉइड फ़ोटो लें')}
+          title={t('Take a polaroid of the room', 'कमरे की पोलरॉइड फ़ोटो लें')}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden>
+            <path d="M4 8.5h3.2L8.8 6h6.4l1.6 2.5H20V18H4z" />
+            <circle cx="12" cy="13" r="3.3" />
+          </svg>
+          <span className="dock-photo-text">{t('Photo', 'फ़ोटो')}</span>
         </button>
         <NowPlaying />
         <span className="dock-sep" aria-hidden />

@@ -7,6 +7,7 @@ import { useScene } from './store'
 import { endTour } from './tour'
 import { whoosh } from './sound'
 import { backToNow, useOutside } from './raipur'
+import { flash } from './polaroid'
 
 export const REPO = 'https://github.com/Sameerkc3579/sameers-room'
 
@@ -46,8 +47,9 @@ export const COMMITS: Commit[] = [
   { hash: '03cf519', day: NOV(9), title: 'Deploy from GitHub: Vercel builds the room from the repo' },
   { hash: 'e9af740', day: NOV(10), title: 'Watch the room build itself' },
   { hash: 'de3aa5e', day: NOV(10), title: 'Room sounds' },
+  { hash: 'becb25d', day: NOV(11), title: 'Turn the desk clock to any hour and weather' },
   // the newest commit: its own hash can't be written inside it
-  { hash: 'HEAD', day: NOV(11), title: 'Turn the desk clock to any hour and weather' },
+  { hash: 'HEAD', day: NOV(11), title: 'Polaroid photo mode' },
 ]
 
 /** what appears (or happens) on a beat; the first five are the Blender room going up, piece by piece */
@@ -69,6 +71,7 @@ export type Piece =
   | 'fireflies'
   | 'dark'
   | 'clock'
+  | 'photo'
 
 /** where the camera looks during a beat (CameraRig.tsx) */
 export type Look = 'wide' | 'screen' | 'computer' | 'books' | 'window' | 'stats' | 'guestbook' | 'shelf' | 'note'
@@ -112,6 +115,7 @@ export const BEATS: Beat[] = [
   { commits: [25], line: ["You're watching it", 'आप इसे अभी देख रहे हैं'], ms: 1700 },
   { commits: [26], line: ['Rain, birds, crickets and candles, all made in code', 'बारिश, चिड़ियाँ, झींगुर और मोमबत्तियाँ, सब कोड से बनी'], ms: 1900 },
   { commits: [27], piece: 'clock', line: ['A whole day goes by, and back to Raipur right now', 'पूरा एक दिन बीतता है, और फिर अभी का रायपुर'], ms: 3600 },
+  { commits: [28], piece: 'photo', line: ['Say cheese: the camera in the dock prints a polaroid', 'मुस्कुराइए: डॉक का कैमरा एक पोलरॉइड फ़ोटो देता है'], ms: 1800 },
 ]
 
 /** the room comes apart first (decor first, walls last) */
@@ -180,6 +184,11 @@ useBuild.subscribe((b) => {
   if (on === turning) return
   turning = on
   if (!on && useOutside.getState().pick.hour !== null) backToNow()
+})
+
+// the polaroid commit: the camera flashes
+useBuild.subscribe((b, prev) => {
+  if (b.at === PIECE_AT.photo && prev.at !== PIECE_AT.photo) flash()
 })
 
 // going anywhere else (the tour, a book or the computer, from the chat) ends the replay

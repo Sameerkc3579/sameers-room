@@ -3,8 +3,9 @@
 //             crickets at night (raipur.ts)
 //   inside    a crackle from the candles now and then
 //   things    the lamp's switch and the blinds, a book opening, closing and turning a page, keys when you sit down
-//             at the computer, the desk clock's dial clicking past each hour (TimeDial.tsx), and the room coming
-//             apart and each piece landing as it builds itself (build.ts)
+//             at the computer, the desk clock's dial clicking past each hour (TimeDial.tsx), a camera's shutter
+//             and the polaroid whirring out (polaroid.ts), and the room coming apart and each piece landing as it
+//             builds itself (build.ts)
 // Browsers only allow sound after the visitor's first click, tap or key, so it starts then, fading in. The dock's
 // speaker button turns it all off (SameerOS and its lo-fi too) and the choice is remembered.
 import { create } from 'zustand'
@@ -304,6 +305,17 @@ export function notch() {
   notched = t
   burst(t, { dur: 0.012, freq: rand(3600, 4400), q: 3, gain: 0.06, attack: 0.001 })
   tone(t, { dur: 0.025, f: 1250, to: 900, gain: 0.02, attack: 0.002 })
+}
+
+/** a camera's shutter, then the motor pushing the polaroid out (polaroid.ts) */
+export function shutter() {
+  if (!live()) return
+  const t = ctx!.currentTime + 0.01
+  burst(t, { dur: 0.03, freq: 2800, q: 1.2, gain: 0.16, attack: 0.001 })
+  tone(t, { dur: 0.05, f: 220, to: 110, gain: 0.06, attack: 0.002 })
+  burst(t + 0.07, { dur: 0.025, freq: 1900, q: 1.4, gain: 0.09, attack: 0.001 })
+  burst(t + 0.3, { dur: 0.75, freq: 900, q: 2.5, gain: 0.05, attack: 0.04 })
+  tone(t + 0.3, { dur: 0.75, f: 78, to: 92, gain: 0.025, attack: 0.04, type: 'sawtooth' })
 }
 
 /** the room coming apart for the replay (build.ts) */

@@ -162,6 +162,12 @@ function raipur(q: Question) {
   return `It's ${clockText(o.hour)} in Raipur right now${temp ? `, ${temp}` : ''} and ${sky}. ${doing(o.hour, o.weekday).replace('Sameer is', "So I'm")}`
 }
 
+/** "take a photo", "click a pic of the room": a polaroid (polaroid.ts) */
+const photoAsk = (q: Question) =>
+  q.has('polaroid', 'snapshot') ||
+  (q.has('take', 'click', 'snap', 'capture', 'khicho', 'kheecho', 'khincho') &&
+    q.has('photo', 'photos', 'picture', 'pic', 'pics', 'image', 'screenshot', 'selfie', 'tasveer', 'tasvir'))
+
 /** "show me the room at night", "make it rain", "back to the real time": a turn of the desk clock (TimeDial.tsx) */
 interface ClockAsk {
   hour?: number | null
@@ -284,6 +290,16 @@ const TOPICS: Topic[] = [
       if (on === now) return say(on ? 'The lights are already on.' : "They're already off. Cozy, right?")
       return say(on ? 'Lights on.' : vary('lights', 'Lights off. Much cozier.', 'Lights off. The neon looks better this way anyway.'), act('set_lights', { on }))
     },
+  },
+  {
+    id: 'photo',
+    kind: 'do',
+    score: (q) => (photoAsk(q) ? 3 : 0),
+    answer: () =>
+      say(
+        vary('photo', 'Say cheese! Here’s a polaroid of the room, just as you’re seeing it. Download it or share it.', 'Another one for the album. It develops in a few seconds.'),
+        act('photo'),
+      ),
   },
   {
     id: 'clock',
@@ -614,7 +630,7 @@ const TOPICS: Topic[] = [
   {
     id: 'room',
     kind: 'say',
-    score: (q) => (!clockAsk(q) && q.has('this room', 'the room', 'this website', 'this site', 'how did you make', 'how was this made', 'three js', 'threejs', '3d') ? 2.2 : 0),
+    score: (q) => (!clockAsk(q) && !photoAsk(q) && q.has('this room', 'the room', 'this website', 'this site', 'how did you make', 'how was this made', 'three js', 'threejs', '3d') ? 2.2 : 0),
     answer: () =>
       say('This room is my portfolio: it’s built with React Three Fiber, modelled in Blender, and the monitor runs SameerOS, a small OS I wrote. Ask me how it was built to watch it go up, commit by commit.'),
   },

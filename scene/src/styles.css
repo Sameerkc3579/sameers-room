@@ -1360,6 +1360,135 @@ canvas {
   }
 }
 
+/* ---------- polaroid photo mode (Photo.tsx, polaroid.ts) ---------- */
+.photo-flash {
+  position: fixed;
+  z-index: 46;
+  inset: 0;
+  background: #fff;
+  pointer-events: none;
+  animation: photo-flash 0.9s ease-out forwards;
+}
+@keyframes photo-flash {
+  0%,
+  12% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.photo-layer {
+  position: fixed;
+  z-index: 45;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(14, 17, 12, 0.6);
+  animation: tour-body-in 0.3s ease-out;
+}
+/* the print slides out, tilted a little, as if just handed over */
+.polaroid {
+  position: relative;
+  margin: 0;
+  line-height: 0;
+  rotate: -1.5deg;
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  animation: polaroid-out 0.7s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+@keyframes polaroid-out {
+  from {
+    opacity: 0;
+    translate: 0 -60px;
+    rotate: -7deg;
+  }
+}
+.polaroid img {
+  display: block;
+  max-width: min(calc(100vw - 32px), 640px);
+  max-height: calc(100dvh - 120px);
+}
+/* the picture comes up out of a milky grey over a few seconds */
+.polaroid-develop {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--w);
+  height: var(--h);
+  background: linear-gradient(160deg, #cfc8b6, #b9b19d);
+  animation: polaroid-develop 3.2s 0.5s ease-in forwards;
+  pointer-events: none;
+}
+@keyframes polaroid-develop {
+  0% {
+    opacity: 1;
+  }
+  35% {
+    opacity: 0.75;
+    filter: sepia(0.3);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.photo-actions .cb-btn {
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(30, 37, 27, 0.92);
+  color: #f3f1e8;
+  font: 500 14px 'Segoe UI', system-ui, sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+}
+.photo-actions .cb-btn.primary {
+  border-color: transparent;
+  background: #5f7f56;
+}
+.photo-actions .cb-btn.ghost {
+  background: rgba(30, 37, 27, 0.6);
+}
+@media (hover: hover) {
+  .photo-actions .cb-btn:hover {
+    background: rgba(48, 58, 44, 0.95);
+  }
+  .photo-actions .cb-btn.primary:hover {
+    background: #6d9063;
+  }
+}
+/* nothing else on screen while the print is up */
+.photo-open .dock,
+.photo-open .hint-layer,
+.photo-open .raipur,
+.photo-open .chat-pill {
+  opacity: 0;
+  pointer-events: none;
+}
+/* phones on their side: the buttons beside the print */
+@media (max-height: 500px) {
+  .photo-layer {
+    flex-direction: row;
+  }
+  .photo-actions {
+    flex-direction: column;
+  }
+  .polaroid img {
+    max-width: calc(100vw - 220px);
+    max-height: calc(100dvh - 32px);
+  }
+}
+
 /* Phones and tablets: a frosted-glass blur over the moving 3D room has to be redrawn on every frame, which costs
    phones a big share of their frame rate. There the same panels are just a little more opaque instead. */
 @media (pointer: coarse), (max-width: 760px) {
@@ -1485,6 +1614,7 @@ canvas {
   background: #6d9063;
 }
 .dock-build svg,
+.dock-photo svg,
 .dock-sound svg {
   width: 16px;
   height: 16px;
@@ -1493,6 +1623,10 @@ canvas {
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+.dock > button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 .dock-music .pause {
   opacity: 0.7;
@@ -1552,7 +1686,17 @@ canvas {
   }
 }
 @media (max-width: 760px) {
-  .tour-full {
+  .tour-full,
+  .dock.playing .dock-long {
+    display: none;
+  }
+}
+/* tablets and phones on their side: the replay and the camera are just their icons (their names are the tooltip),
+   and the lo-fi chip just its bars and pause */
+@media (max-width: 900px) {
+  .dock-build-text,
+  .dock-photo-text,
+  .dock-music-name {
     display: none;
   }
 }
@@ -1579,6 +1723,7 @@ canvas {
   .dock-sep,
   .dock-music-name,
   .dock-build-text,
+  .dock-photo-text,
   .dock-long {
     display: none;
   }
@@ -1609,14 +1754,58 @@ canvas {
   .dock-ask-short {
     display: inline;
   }
+  .dock > button,
+  .dock > a,
+  .dock .dock-sound {
+    padding: 0 7px;
+  }
+}
+@media (max-width: 380px) {
+  .dock > button,
+  .dock > a,
+  .dock .dock-sound {
+    padding: 0 6px;
+  }
+}
+/* phones with the lo-fi playing: one more button in the dock, so a little less room around each, and the bars
+   alone say it's playing (a tap still pauses it) */
+@media (max-width: 600px) {
+  .dock.playing .dock-music .pause {
+    display: none;
+  }
+  .dock.playing > button,
+  .dock.playing > a,
+  .dock.playing .dock-sound {
+    padding: 0 6px;
+  }
+}
+@media (max-width: 440px) {
+  .dock.playing > button,
+  .dock.playing > a,
+  .dock.playing .dock-sound {
+    padding: 0 5px;
+  }
+}
+@media (max-width: 380px) {
+  .dock.playing > button,
+  .dock.playing > a,
+  .dock.playing .dock-sound {
+    padding: 0 4px;
+  }
 }
 @media (max-width: 340px) {
   .dock {
     font-size: 12px;
   }
+  .dock.playing > button,
+  .dock.playing > a,
+  .dock.playing .dock-sound {
+    padding: 0 2px;
+  }
   .dock > button,
-  .dock > a {
-    padding: 0 6px;
+  .dock > a,
+  .dock .dock-sound {
+    padding: 0 4px;
   }
   .dock-long,
   .dock-ask-short {
